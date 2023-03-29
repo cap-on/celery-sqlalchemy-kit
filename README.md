@@ -2,11 +2,13 @@
 # cap-on SQLAlchemy-Celery-Kit  
   
 ## About  
-This kit enables you to store periodic celery tasks in a Postgres or MySQL database. The schedules can be set as  
+This kit enables you to store periodic celery tasks in an SQLAlchemy compatible database (that supports JSON type). The schedules can be set as  
 crontabs or time-intervals. Scheduled tasks in the database can be set active or inactive to control whether they should run.   
 This kit also allows you to run asynchronous tasks by a celery worker.   
   
-This is a package from cap-on. It is ready to use, but still under development.   
+This is a package from cap-on. It is ready to use with caution, but is still under development.   
+
+**NOTE**: This package was originally developed and tested with a PostgreSQL database. Theoretically any other SQLAlchemy compatible Database, that supports JSON type, can be used. But they have not been tested yet.
   
   
 ## Getting Started  
@@ -14,8 +16,9 @@ This is a package from cap-on. It is ready to use, but still under development.
 - python >= 3.10  
 - celery >= 5.2.7  
 - sqlalchemy >= 1.4.46  
-- psycopg2 >= 2.9.3  
-- redis or other broker/backend   
+- psycopg2 >= 2.9.3 / mysql-connector / other connector depending on database
+- asyncpg >= 0.27.0 / asyncmy / other db driver compatible with SQLAlchemy asyncio extension package
+- redis >= 4.5.1 or other broker/backend for celery
   
 ### Installation  
 You can install this package from PyPi:  
@@ -45,12 +48,12 @@ celery = Celery(
 celery.conf.update(  
     {  
         "scheduler_sync_db_uri": scheduler_sync_db_uri,  
-  "scheduler_async_db_uri": scheduler_async_db_uri,  
-  "scheduler_max_interval": scheduler_max_interval,  
-  "scheduler_sync_every": scheduler_sync_every,  
-  "celery_max_retry": celery_max_retry,  
-  "celery_retry_delay": celery_retry_delay,  
-  "use_alembic": False,  
+        "scheduler_async_db_uri": scheduler_async_db_uri,  
+        "scheduler_max_interval": scheduler_max_interval,  
+        "scheduler_sync_every": scheduler_sync_every,  
+        "celery_max_retry": celery_max_retry,  
+        "celery_retry_delay": celery_retry_delay,  
+        "use_alembic": False,  
   },  
 )
 ```
