@@ -16,7 +16,7 @@ celeryTest.conf.update(
         "scheduler_async_db_uri": os.getenv("SQLALCHEMY_DATABASE_URI"),
         "scheduler_max_interval": os.getenv("SCHEDULER_MAX_INTERVAL"),
         "scheduler_sync_every": os.getenv("SCHEDULER_SYNC_EVERY"),
-        "use_alembic": False,
+        "create_table": True,
     }
 )
 

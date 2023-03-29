@@ -53,22 +53,22 @@ celery.conf.update(
         "scheduler_sync_every": scheduler_sync_every,  
         "celery_max_retry": celery_max_retry,  
         "celery_retry_delay": celery_retry_delay,  
-        "use_alembic": False,  
+        "create_table": True,  
   },  
 )
 ```
 
-|variable                | explanation                                                                                    | default	                  |
-|----------------|------------------------------------------------------------------------------------------------|---------------------------|
-|`scheduler_sync_db_uri`| synchronous db uri used by scheduler                                                           | "psycopg2:///schedule.db" |
-|`scheduler_async_db_uri`          | asynchronous db uri - only required when working with async tasks                              | "sqlite:///schedule.db"   |
-|`scheduler_max_interval`                    | maximum time to sleep between re-checking the schedule                                         | 300 (seconds)             |
-|`scheduler_sync_every`                    | How often to sync the schedule                                                                 | 3 * 60 (seconds)          |
-|`celery_max_retry`                    | How often to retry a task when it fails                                                        | 3                         |
-|`celery_retry_delay`                    | How long to wait before next retry of failed task is started                                   | 300 (seconds)             |
-|`use_alembic`                    | If set `false`, table 'routines' with scheduled tasks is created automatically with sqlalchemy | false                     |
+|variable                | explanation                                                                                                                              | default	                  |
+|----------------|------------------------------------------------------------------------------------------------------------------------------------------|---------------------------|
+|`scheduler_sync_db_uri`| synchronous db uri used by scheduler                                                                                                     | "psycopg2:///schedule.db" |
+|`scheduler_async_db_uri`          | asynchronous db uri - only required when working with async tasks                                                                        | "asyncpg:///schedule.db"  |
+|`scheduler_max_interval`                    | maximum time to sleep between re-checking the schedule                                                                                   | 300 (seconds)             |
+|`scheduler_sync_every`                    | How often to sync the schedule                                                                                                           | 3 * 60 (seconds)          |
+|`celery_max_retry`                    | How often to retry a task when it fails                                                                                                  | 3                         |
+|`celery_retry_delay`                    | How long to wait before next retry of failed task is started                                                                             | 300 (seconds)             |
+|`use_alembic`                    | If set `True`, table 'routines' for scheduled tasks is created automatically with sqlalchemy. If you wish to use alembic, set to `False` | True                      |
 
-Make sure to use the correct `scheduler_sync_db_uri` of your project allowing the scheduler to create a table named `routine` and save your scheduled tasks in it.
+Make sure to use the correct `scheduler_sync_db_uri` of your project allowing the `RoutineScheduler` to create a table named `routines` and save your scheduled tasks in it.
 
 #### 2.1. Create scheduled tasks
 To create tasks that run after your desired schedule, you have to inherit from class `SyncTask` like so:
@@ -113,8 +113,8 @@ class CeleryTestTask(AsyncTask):
 
 #### 3. Change schedule / (in-) activate tasks
 
-If you wish to change the schedule of a task, just update the corresponding db entry. The next time the `scheduler` synchronizes, it will acknowledge the new schedule. 
-Same thing with activating or inactivating tasks. To activate a task, set column `active` in your db to `t` (true). To inactivate a task, set column `active` in your db to `f` (false).  A task that is inactive will not be executed as long as you change it to active again.
+If you wish to change the schedule of a task, just update the corresponding db entry. The next time the `RoutineScheduler` synchronizes, it will acknowledge the new schedule. 
+Same thing with activating or inactivating tasks. To activate a task, set column `active` in your db to `t` (True). To inactivate a task, set column `active` in your db to `f` (False).  A task that is inactive will not be executed as long as you change it to active again.
 
 
 #### 4. Source of truth for schedule

@@ -47,7 +47,7 @@ class RoutineScheduler(Scheduler):
         self._task_db = TaskDBSync(scheduler_db_uri=db_uri)
         self._session = self._task_db.session
 
-        if not self.app.conf.get("use_alembic", False):
+        if not self.app.conf.get("create_table", True):
             try:
                 Base.metadata.create_all(bind=self._task_db.engine, checkfirst=True)
                 # checkfirst = True: will not attempt to recreate tables already present in the target database.

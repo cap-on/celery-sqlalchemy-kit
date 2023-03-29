@@ -6,7 +6,7 @@ from celery import Celery
 result_backend = "redis://redis:6379"
 broker_url = "redis://redis:6379"
 scheduler_sync_db_uri = "psycopg2:///schedule.db"
-scheduler_async_db_uri = "sqlite:///schedule.db"
+scheduler_async_db_uri = "asyncpg:///schedule.db"
 scheduler_max_interval = 3 * 60
 scheduler_sync_every = 3 * 60
 celery_max_retry = 3
@@ -26,6 +26,6 @@ celery.conf.update(
         "scheduler_sync_every": scheduler_sync_every,
         "celery_max_retry": celery_max_retry,
         "celery_retry_delay": celery_retry_delay,
-        "use_alembic": False,
+        "create_table": True,
     },
 )
