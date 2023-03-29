@@ -1,0 +1,3 @@
+.idea
+.env
+/src/celery_test_file.json

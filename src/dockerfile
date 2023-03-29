@@ -1,0 +1,29 @@
+FROM python:3.10-slim
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONBUFFERED 1
+# install system dependencies
+RUN apt-get update \
+  && apt-get -y install netcat gcc libpq-dev build-essential curl \
+  && apt-get clean
+
+# install python dependencies
+RUN mkdir -p /src
+WORKDIR /src/
+COPY /requirements.dev.txt /src/
+RUN pip install --upgrade pip
+RUN pip install -r requirements.dev.txt
+
+# Copy starting scripts and make them executable
+COPY /scripts/start_celery.sh /start_celery.sh
+RUN chmod +x /start_celery.sh
+
+COPY /scripts/start_celery_beat.sh /start_celery_beat.sh
+RUN chmod +x /start_celery_beat.sh
+
+COPY /scripts/start_tests.sh /start_tests.sh
+RUN chmod +x /start_tests.sh
+
+COPY . /src
+
+ENV PYTHONPATH=/src

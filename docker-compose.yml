@@ -1,0 +1,56 @@
+version: '3.8'
+services:
+
+  db:
+    container_name: ts_db
+    image: timescale/timescaledb:2.9.1-pg14
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+      - postgres_backup:/backup
+    env_file:
+      - .env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+
+  redis:
+    container_name: redis
+    hostname: redis
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    env_file:
+      - .env
+
+  celery:
+    container_name: celery_worker
+    image: celery-sqlalchemy-kit:latest
+    build:
+      context: ./src
+      dockerfile: ./dockerfile
+    volumes:
+      - ./src/:/src
+    env_file:
+      - .env
+    command: bash -c "sleep 8 && sh ./scripts/start_celery.sh"
+
+  celery_beat:
+    container_name: celery_beat
+    image: celery-sqlalchemy-kit:latest
+    volumes:
+      - ./src/:/src
+    env_file:
+      - .env
+    command: bash -c "sleep 10 && sh ./scripts/start_celery_beat.sh"
+
+  run_tests:
+    container_name: run_tests
+    image: celery-sqlalchemy-kit:latest
+    volumes:
+      - ./src/:/src
+    env_file:
+      - .env
+    command: sh ./scripts/start_tests.sh
+
+volumes:
+    postgres_data:
+    postgres_backup:
