@@ -1,9 +1,8 @@
 
-# cap-on SQLAlchemy-Celery-Kit  
+# cap-on celery-sqlalchemy-kit 
   
 ## About  
-This kit enables you to store periodic celery tasks in an SQLAlchemy compatible database (that supports JSON type). The schedules can be set as  
-crontabs or time-intervals. Scheduled tasks in the database can be set active or inactive to control whether they should run.   
+This kit enables you to store periodic celery tasks in an SQLAlchemy compatible database (that supports JSON type). The schedules can be set as crontabs or time-intervals. Scheduled tasks in the database can be set active or inactive to control whether they should run.   
 This kit also allows you to run asynchronous tasks by a celery worker.   
   
 This is a package from cap-on. It is ready to use with caution, but is still under development.   
@@ -18,7 +17,7 @@ This is a package from cap-on. It is ready to use with caution, but is still und
 - sqlalchemy >= 1.4.46  
 - psycopg2 >= 2.9.3 / mysql-connector / other connector depending on database
 - asyncpg >= 0.27.0 / asyncmy / other db driver compatible with SQLAlchemy asyncio extension package
-- redis >= 4.5.1 or other broker/backend for celery
+- redis >= 4.5.1 / other broker/backend for celery
   
 ### Installation  
 You can install this package from PyPi:  
@@ -58,15 +57,15 @@ celery.conf.update(
 )
 ```
 
-|variable                | explanation                                                                                                                              | default	                  |
-|----------------|------------------------------------------------------------------------------------------------------------------------------------------|---------------------------|
-|`scheduler_sync_db_uri`| synchronous db uri used by scheduler                                                                                                     | "psycopg2:///schedule.db" |
-|`scheduler_async_db_uri`          | asynchronous db uri - only required when working with async tasks                                                                        | "asyncpg:///schedule.db"  |
-|`scheduler_max_interval`                    | maximum time to sleep between re-checking the schedule                                                                                   | 300 (seconds)             |
-|`scheduler_sync_every`                    | How often to sync the schedule                                                                                                           | 3 * 60 (seconds)          |
-|`celery_max_retry`                    | How often to retry a task when it fails                                                                                                  | 3                         |
-|`celery_retry_delay`                    | How long to wait before next retry of failed task is started                                                                             | 300 (seconds)             |
-|`use_alembic`                    | If set `True`, table 'routines' for scheduled tasks is created automatically with sqlalchemy. If you wish to use alembic, set to `False` | True                      |
+| variable                 | explanation                                                                                                                              | default	                  |
+|--------------------------|------------------------------------------------------------------------------------------------------------------------------------------|---------------------------|
+| `scheduler_sync_db_uri`  | synchronous db uri used by scheduler                                                                                                     | "psycopg2:///schedule.db" |
+| `scheduler_async_db_uri` | asynchronous db uri - only required when working with async tasks                                                                        | "asyncpg:///schedule.db"  |
+| `scheduler_max_interval` | maximum time to sleep between re-checking the schedule                                                                                   | 300 (seconds)             |
+| `scheduler_sync_every`   | How often to sync the schedule                                                                                                           | 3 * 60 (seconds)          |
+| `celery_max_retry`       | How often to retry a task when it fails                                                                                                  | 3                         |
+| `celery_retry_delay`     | How long to wait before next retry of failed task is started                                                                             | 300 (seconds)             |
+| `create_table`           | If set `True`, table 'routines' for scheduled tasks is created automatically with sqlalchemy. If you wish to use alembic, set to `False` | True                      |
 
 Make sure to use the correct `scheduler_sync_db_uri` of your project allowing the `RoutineScheduler` to create a table named `routines` and save your scheduled tasks in it.
 
@@ -76,7 +75,7 @@ To create tasks that run after your desired schedule, you have to inherit from c
 ```python  
 class CeleryTestTask(SyncTask):  
     name = "celery test"  
-	schedule = 15   
+    schedule = 15   
   
     def run(self, *args, **kwargs):  
         # do stuff
@@ -104,7 +103,7 @@ This works the same way as with synchronous tasks, except that your custom tasks
 ```python  
 class CeleryTestTask(AsyncTask):  
     name = "celery test"  
-	schedule = 15   
+    schedule = 15   
   
     async def execute(self, *args, **kwargs):  
         # do stuff
