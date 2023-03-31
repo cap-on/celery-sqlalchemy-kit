@@ -10,7 +10,7 @@ RUN apt-get update \
 # install python dependencies
 RUN mkdir -p /src
 WORKDIR /src/
-COPY /tests/requirements.dev.txt /src/
+COPY /tests/build/requirements.dev.txt /src/
 RUN pip install --upgrade pip
 RUN pip install -r requirements.dev.txt
 
@@ -24,6 +24,6 @@ RUN chmod +x /start_celery_beat.sh
 COPY /tests/scripts/start_tests.sh /start_tests.sh
 RUN chmod +x /start_tests.sh
 
-COPY .. /src
+COPY ../.. /src
 
 ENV PYTHONPATH=/src

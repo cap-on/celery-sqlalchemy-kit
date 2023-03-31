@@ -1,9 +1,13 @@
+#######
+# This Docker Compose File is mainly for testing and showcasing purposes.
+#######
+
 version: '3.8'
 services:
 
   db:
-    container_name: ts_db
-    image: timescale/timescaledb:2.9.1-pg14
+    container_name: db
+    image: postgres:14.7
     volumes:
       - postgres_data:/var/lib/postgresql/data/
       - postgres_backup:/backup
@@ -26,7 +30,7 @@ services:
     image: celery-sqlalchemy-kit:latest
     build:
       context: ./src
-      dockerfile: ./tests/dockerfile
+      dockerfile: ./tests/build/dockerfile
     volumes:
       - ./src/:/src
     env_file:

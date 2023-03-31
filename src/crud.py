@@ -101,4 +101,4 @@ class CRUDRoutine:
         return uuid4()
 
 
-crud_routine = CRUDRoutine(Routine)
+crud = CRUDRoutine(Routine)

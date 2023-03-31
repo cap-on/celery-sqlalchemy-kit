@@ -20,7 +20,7 @@ celeryTest.conf.update(
     }
 )
 
-with open(os.getenv("CELERY_TEST_FILE"), "w") as jsonFile:
+with open(os.getenv("CELERY_TEST_FILE", "celery_test.json"), "w") as jsonFile:
     json.dump({"value": 0, "value2": 0}, jsonFile)
 
 

@@ -2,6 +2,7 @@ import os
 from typing import List
 
 from celery import Celery
+from celery.schedules import crontab
 from celery.utils.log import get_logger
 from celery.beat import Scheduler
 
@@ -10,8 +11,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from db.model import Routine, Base
 from sqlalchemy.orm import Session
 
-from crud_routines import crud_routine
-from db.session import TaskDBSync
+from crud import crud
+from db.session import SessionWrapper
 
 DEFAULT_SCHEDULER_SYNC_DB_URI = "postgresql+psycopg2:///schedule.db"
 
@@ -35,16 +36,16 @@ class RoutineScheduler(Scheduler):
 
         self.app: Celery = kwargs["app"]
         db_uri = (
-            self.app.conf.get("scheduler_sync_db_uri")
-            or os.getenv("SCHEDULER_SYNC_DB_URI")
+            self.app.conf.get("scheduler_db_uri")
+            or os.getenv("SCHEDULER_DB_URI")
             or DEFAULT_SCHEDULER_SYNC_DB_URI
         )
 
-        self.max_interval = int(self.app.conf.get("scheduler_max_interval")) or int(os.getenv("SCHEDULER_MAX_INTERVAL", 300))
+        self.max_interval = int(self.app.conf.get("scheduler_max_interval") or os.getenv("SCHEDULER_MAX_INTERVAL", 10))
 
-        self.sync_every = int(self.app.conf.get("scheduler_sync_every")) or int(os.getenv("SCHEDULER_SYNC_EVERY", 3 * 60))
+        self.sync_every = int(self.app.conf.get("scheduler_sync_every") or os.getenv("SCHEDULER_SYNC_EVERY", 3 * 60))
 
-        self._task_db = TaskDBSync(scheduler_db_uri=db_uri)
+        self._task_db = SessionWrapper(scheduler_db_uri=db_uri)
         self._session = self._task_db.session
 
         if not self.app.conf.get("create_table", True):
@@ -74,7 +75,7 @@ class RoutineScheduler(Scheduler):
         """
         # schedule = self.schedule
         # get all routines from db, active and inactive
-        db_routines = crud_routine.find(db=self._session)
+        db_routines = crud.find(db=self._session)
         schedule = self.db_routines_to_schedule_entries(db_routines=db_routines)
 
         # compare which routines are
@@ -102,14 +103,14 @@ class RoutineScheduler(Scheduler):
             write_to_db = self.schedule_dict_to_db_routines(write_to_db)
             logger.debug("Setup: Add celery routines to db.")
             try:
-                crud_routine.create_multiple(db=self._session, routines_in=write_to_db)
+                crud.create_multiple(db=self._session, routines_in=write_to_db)
             except Exception as e:
                 logger.error(e, exc_info=True)
         if delete_from_db:
             routine_names = [key for key in delete_from_db]
             logger.debug("Setup: Delete celery routines from db.")
             try:
-                crud_routine.remove_by_name(db=self._session, names=routine_names)
+                crud.remove_by_name(db=self._session, names=routine_names)
             except Exception as e:
                 logger.error(e, exc_info=True)
 
@@ -135,7 +136,7 @@ class RoutineScheduler(Scheduler):
         for key, value in schedule_dict.items():
             if isinstance(value["schedule"], int):
                 schedule = {"timedelta": value["schedule"]}
-            else:
+            elif isinstance(value["schedule"], crontab):
                 schedule = {
                     "minute": value["schedule"]._orig_minute,
                     "hour": value["schedule"]._orig_hour,
@@ -143,6 +144,8 @@ class RoutineScheduler(Scheduler):
                     "day_of_month": value["schedule"]._orig_day_of_month,
                     "month_of_year": value["schedule"]._orig_month_of_year,
                 }
+            else:
+                raise ValueError(f"Schedule of task {key} is neither crontab nor an int")
             db_routines.append(
                 Routine(
                     name=key,
@@ -162,7 +165,7 @@ class RoutineScheduler(Scheduler):
         logger.debug("get schedule")
         schedule_entries = {}
         try:
-            self._db_routines = crud_routine.find(db=self._session, active=True)
+            self._db_routines = crud.find(db=self._session, active=True)
             schedule_entries = self.db_routines_to_schedule_entries(db_routines=self._db_routines)
         except SQLAlchemyError as e:
             if self.db_tries > 0:
@@ -206,14 +209,14 @@ class RoutineScheduler(Scheduler):
                             "last_run_at": self._schedule[name].last_run_at,
                             "total_run_count": self._schedule[name].total_run_count,
                         }
-                        crud_routine.update(db=self._session, db_obj=db_routine, obj_in=obj_in)
+                        crud.update(db=self._session, db_obj=db_routine, obj_in=obj_in)
                         _tried.add(name)
                     except SQLAlchemyError as e:
                         if self.db_tries > 0:
                             raise e
                         self._task_db.renew()
                         self._session = self._task_db.session
-                        self._db_routines = crud_routine.find(db=self._session, active=True)
+                        self._db_routines = crud.find(db=self._session, active=True)
                         self.db_tries = 1
                         self._to_be_updated.add(name)
                         return self.sync()

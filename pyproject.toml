@@ -8,7 +8,7 @@ version = "0.1.0"
 authors = [
   { name="Amelie Luecke", email="amelie.luecke@cap-on.de" }, { name="Philipp Ratz", email="philipp.ratz@cap-on.de" }
 ]
-description = "Schedule tasks in a postgres or mysql database and define async celery tasks."
+description = "Schedule tasks in an SQL Database and define Async Celery Tasks."
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [

@@ -5,11 +5,13 @@ from celery import Task
 from celery.utils.log import get_logger
 from celery.schedules import crontab
 
-from db.session import TaskDBAsync
+# from db.session import TaskDBAsync
 
 logger = get_logger(__name__)
 
-DEFAULT_SCHEDULER_ASYNC_DB_URI = "psycopg2:///schedule.db"
+# @AL Ich glaube, wir können das mit der Async Datenbankverbindung rauslassen.
+# Ist ja nicht gesichert, dass sie async nur/ausschließlich mit async db connection wollen
+# Kann man ja dann in die execute methode schreiben
 
 
 class SyncTask(Task):
@@ -28,7 +30,6 @@ class SyncTask(Task):
     schedule: int | dict | None = None
     options: dict = {}
     kwargs: dict = {}
-    _scheduler_async_db_uri: str = None
 
     def __init__(self):
         if self.app.conf.get("celery_max_retry"):
@@ -40,12 +41,6 @@ class SyncTask(Task):
             self.retry_delay = int(self.app.conf.get("celery_retry_delay"))
         else:
             self.retry_delay = int(os.getenv("DEFAULT_CELERY_RETRY_DELAY", 300))
-
-        self._scheduler_async_db_uri = (
-            self.app.conf.get("scheduler_async_db_uri")
-            or os.getenv("SCHEDULER_ASYNC_DB_URI")
-            or DEFAULT_SCHEDULER_ASYNC_DB_URI
-        )
 
         if self.schedule:
             self.schedule_task()
@@ -81,6 +76,17 @@ class AsyncTask(SyncTask):
     All tasks can be executed on demand by using standard celery methods
     like 'async_apply()', 'delay()' or 'send_task()'.
     """
+    # _worker_async_db_uri: str = None
+
+    # def __init__(self):
+    #     super().__init__()
+    #     self._worker_async_db_uri = (
+    #         self.app.conf.get("worker_async_db_uri")
+    #         or os.getenv("WORKER_ASYNC_DB_URI")
+    #      )
+    #     if not self._worker_async_db_uri:
+    #         raise ValueError("Neither the celery config variable 'worker_async_db_uri' nor the ENV variable "
+    #                      "'WORKER_ASYNC_DB_URI' is set.")
 
     def run(self, *args, **kwargs):
         try:
@@ -89,20 +95,20 @@ class AsyncTask(SyncTask):
             raise self.retry(exc=e, max_retries=self.max_retries, retry_delay=self.retry_delay)
 
     async def run_execute(self, *args, **kwargs):
-        task_db = TaskDBAsync(scheduler_db_uri=self._scheduler_async_db_uri)
-        await task_db.connect()
+        # task_db = TaskDBAsync(scheduler_db_uri=self._worker_async_db_uri)
+        # await task_db.connect()
         try:
-            result = await self.execute(db=task_db, *args, **kwargs)
+            result = await self.execute(*args, **kwargs)
         except Exception as e:
             logger.error(e, exc_info=True)
-            await task_db.rollback()
-            await task_db.close()
+            # await task_db.rollback()
+            # await task_db.close()
             raise e
         else:
-            await task_db.close()
+            # await task_db.close()
             if result:
                 logger.info(result)
 
-    async def execute(self, db: TaskDBAsync, *args, **kwargs):
+    async def execute(self, *args, **kwargs):
         """The body of the task executed by workers."""
         raise NotImplementedError("Asynchronous Tasks must define the execute method.")

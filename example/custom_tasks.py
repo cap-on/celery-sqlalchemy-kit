@@ -1,8 +1,8 @@
 import json
 import os
 
-from example.celery import celery
-from base_task import AsyncTask, SyncTask
+from example.celery_app import celery
+from src import AsyncTask, SyncTask
 
 CELERY_TEST_FILE: str = os.getenv("CELERY_TEST_FILE")
 
@@ -11,9 +11,6 @@ class CeleryTestTask(SyncTask):
 
     name = "celery test"
     schedule = 15
-
-    def __init__(self):
-        super().__init__()
 
     def run(self, *args, **kwargs):
         with open(CELERY_TEST_FILE, "r") as jsonFile:
@@ -29,9 +26,6 @@ class CeleryTestTaskToo(AsyncTask):
 
     name = "celery test too"
     schedule = 15
-
-    def __init__(self):
-        super().__init__()
 
     async def execute(self, *args, **kwargs):
         with open(CELERY_TEST_FILE, "r") as jsonFile:

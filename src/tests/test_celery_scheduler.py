@@ -1,10 +1,37 @@
 import json
-import os
 import time
+import os
 
 import pytest
 from sqlalchemy.orm import Session
-from crud_routines import crud_routine
+from sqlalchemy import create_engine
+
+from crud import crud
+
+
+@pytest.fixture(scope="function")
+def ac_session() -> Session:
+    """An auto-committing session, this means all changes are directly committed to the DB.
+    The changes are thus readable by other Connections."""
+    engine = create_engine(
+        os.getenv("SCHEDULER_DB_URI"),
+        pool_size=2,
+        max_overflow=10,
+        pool_pre_ping=True,
+        future=True,
+        isolation_level="AUTOCOMMIT",
+    )
+    connection = engine.connect()
+    session = Session(bind=connection, expire_on_commit=False)
+
+    try:
+        yield session
+    except Exception as e:
+        raise e
+    finally:
+        session.close()
+        connection.close()
+        engine.dispose()
 
 
 # @pytest.mark.skip
@@ -22,69 +49,69 @@ def test_celery_scheduler(ac_session: Session) -> None:
     # and only works when docker when no other tests have been executed yet
 
     # check if routine that is in db but not in code was correctly deleted in db
-    routine = crud_routine.find_by_name(db=ac_session, name="test routine")
+    routine = crud.find_by_name(db=ac_session, name="test routine")
     assert not routine
     # check if routine that is in code and db but with different schedule keeps the schedule in db
-    routine = crud_routine.find_by_name(db=ac_session, name="celery test")
+    routine = crud.find_by_name(db=ac_session, name="celery test")
     assert routine.schedule == {"timedelta": 60}
     # check if routine that is in code and db but set inactive is not in schedule but still in db
-    routine = crud_routine.find_by_name(db=ac_session, name="celery test too")
+    routine = crud.find_by_name(db=ac_session, name="celery test too")
     assert routine.active is False
 
     # activate both test tasks
-    routine = crud_routine.find_by_name(db=ac_session, name="celery test")
+    routine = crud.find_by_name(db=ac_session, name="celery test")
     obj_in = {"active": True}
-    crud_routine.update(db=ac_session, db_obj=routine, obj_in=obj_in)
-    routine = crud_routine.find_by_name(db=ac_session, name="celery test too")
+    crud.update(db=ac_session, db_obj=routine, obj_in=obj_in)
+    routine = crud.find_by_name(db=ac_session, name="celery test too")
     obj_in = {"active": True}
-    crud_routine.update(db=ac_session, db_obj=routine, obj_in=obj_in)
+    crud.update(db=ac_session, db_obj=routine, obj_in=obj_in)
 
     # update schedule from task to every 5 seconds
-    routine = crud_routine.find_by_name(db=ac_session, name="celery test")
+    routine = crud.find_by_name(db=ac_session, name="celery test")
     obj_in = {"schedule": {"timedelta": 5}}
-    crud_routine.update(db=ac_session, db_obj=routine, obj_in=obj_in)
+    crud.update(db=ac_session, db_obj=routine, obj_in=obj_in)
 
     # check if task is running
-    with open(os.getenv("CELERY_TEST_FILE"), "r") as jsonFile:
+    with open(os.getenv("CELERY_TEST_FILE", "celery_test.json"), "r") as jsonFile:
         test_file = json.load(jsonFile)
         if "value" in test_file:
             value = test_file["value"]
     time.sleep(10)
-    with open(os.getenv("CELERY_TEST_FILE"), "r") as jsonFile:
+    with open(os.getenv("CELERY_TEST_FILE", "celery_test.json"), "r") as jsonFile:
         test_file = json.load(jsonFile)
         value_new = test_file["value"]
 
     assert value_new > value
 
     # now set task inactive
-    routine = crud_routine.find_by_name(db=ac_session, name="celery test")
+    routine = crud.find_by_name(db=ac_session, name="celery test")
     obj_in = {"active": False}
-    crud_routine.update(db=ac_session, db_obj=routine, obj_in=obj_in)
+    crud.update(db=ac_session, db_obj=routine, obj_in=obj_in)
 
     # check that task is not running
-    with open(os.getenv("CELERY_TEST_FILE"), "r") as jsonFile:
+    with open(os.getenv("CELERY_TEST_FILE", "celery_test.json"), "r") as jsonFile:
         test_file = json.load(jsonFile)
         if "value" in test_file:
             value = test_file["value"]
     time.sleep(11)
-    with open(os.getenv("CELERY_TEST_FILE"), "r") as jsonFile:
+    with open(os.getenv("CELERY_TEST_FILE", "celery_test.json"), "r") as jsonFile:
         test_file = json.load(jsonFile)
         value_new = test_file["value"]
 
     assert value_new == value
 
     # and now active again
-    routine = crud_routine.find_by_name(db=ac_session, name="celery test")
+    routine = crud.find_by_name(db=ac_session, name="celery test")
     obj_in = {"active": True}
-    crud_routine.update(db=ac_session, db_obj=routine, obj_in=obj_in)
+    crud.update(db=ac_session, db_obj=routine, obj_in=obj_in)
 
     # check if task is running
-    with open(os.getenv("CELERY_TEST_FILE"), "r") as jsonFile:
+    with open(os.getenv("CELERY_TEST_FILE", "celery_test.json"), "r") as jsonFile:
         test_file = json.load(jsonFile)
         if "value" in test_file:
             value = test_file["value"]
     time.sleep(10)
-    with open(os.getenv("CELERY_TEST_FILE"), "r") as jsonFile:
+    with open(os.getenv("CELERY_TEST_FILE", "celery_test.json"), "r") as jsonFile:
         test_file = json.load(jsonFile)
         value_new = test_file["value"]
 
@@ -98,7 +125,7 @@ def test_create_table_by_scheduler(ac_session: Session) -> None:
     Don't use 'tests/setup_routines_table.py' for this test.
     """
     # check if table 'routines' is set up by scheduler and routine entries are available
-    routine = crud_routine.find_by_name(db=ac_session, name="celery test")
+    routine = crud.find_by_name(db=ac_session, name="celery test")
     assert routine
-    routine = crud_routine.find_by_name(db=ac_session, name="celery test too")
+    routine = crud.find_by_name(db=ac_session, name="celery test too")
     assert routine

@@ -5,8 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, AsyncConnection, create_async_e
 from sqlalchemy.orm import Session, sessionmaker
 
 
-class TaskDBSync:
-    """For celery scheduler"""
+class SessionWrapper:
+    """
+    Session Wrapper for the celery scheduler.
+    Allows
+    """
 
     session: Session
 
@@ -33,41 +36,33 @@ class TaskDBSync:
         self.connection.close()
 
 
-class TaskDBAsync:
-    """For celery worker"""
-
-    session: AsyncSession
-    connection: AsyncConnection
-
-    def __init__(self, scheduler_db_uri: str):
-        self.engine = create_async_engine(
-            scheduler_db_uri,
-            pool_size=2,
-            max_overflow=10,
-            pool_pre_ping=True,
-        )
-
-    async def connect(self):
-        self.connection = await self.engine.connect()
-        await self.connection.begin()
-        self.session = AsyncSession(bind=self.connection, expire_on_commit=False)
-
-    async def close(self):
-        await self.session.commit()
-        await self.connection.commit()
-        await self.session.close()
-        await self.connection.close()
-
-    async def rollback(self):
-        await self.session.rollback()
+# class TaskDBAsync:
+#     """For async celery workers"""
+#
+#     session: AsyncSession
+#     connection: AsyncConnection
+#
+#     def __init__(self, scheduler_db_uri: str):
+#         self.engine = create_async_engine(
+#             scheduler_db_uri,
+#             pool_size=2,
+#             max_overflow=10,
+#             pool_pre_ping=True,
+#         )
+#
+#     async def connect(self):
+#         self.connection = await self.engine.connect()
+#         await self.connection.begin()
+#         self.session = AsyncSession(bind=self.connection, expire_on_commit=False)
+#
+#     async def close(self):
+#         await self.session.commit()
+#         await self.connection.commit()
+#         await self.session.close()
+#         await self.connection.close()
+#
+#     async def rollback(self):
+#         await self.session.rollback()
 
 
 metadata = MetaData()
-
-engine = create_engine(
-    os.getenv("SQLALCHEMY_DATABASE_SYNC_URI"),
-    pool_size=2,
-    max_overflow=10,
-    pool_pre_ping=True,
-)
-sync_session = sessionmaker(engine, class_=Session, expire_on_commit=False)
