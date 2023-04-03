@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 
-from crud import crud
+from db.crud import crud
 
 
 @pytest.fixture(scope="function")

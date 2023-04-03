@@ -11,7 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from db.model import Routine, Base
 from sqlalchemy.orm import Session
 
-from crud import crud
+from db.crud import crud
 from db.session import SessionWrapper
 
 DEFAULT_SCHEDULER_SYNC_DB_URI = "postgresql+psycopg2:///schedule.db"
@@ -75,7 +75,7 @@ class RoutineScheduler(Scheduler):
         """
         # schedule = self.schedule
         # get all routines from db, active and inactive
-        db_routines = crud.find(db=self._session)
+        db_routines = crud.get_multiple(db=self._session)
         schedule = self.db_routines_to_schedule_entries(db_routines=db_routines)
 
         # compare which routines are
@@ -165,7 +165,7 @@ class RoutineScheduler(Scheduler):
         logger.debug("get schedule")
         schedule_entries = {}
         try:
-            self._db_routines = crud.find(db=self._session, active=True)
+            self._db_routines = crud.get_multiple(db=self._session, active=True)
             schedule_entries = self.db_routines_to_schedule_entries(db_routines=self._db_routines)
         except SQLAlchemyError as e:
             if self.db_tries > 0:
@@ -216,7 +216,7 @@ class RoutineScheduler(Scheduler):
                             raise e
                         self._task_db.renew()
                         self._session = self._task_db.session
-                        self._db_routines = crud.find(db=self._session, active=True)
+                        self._db_routines = crud.get_multiple(db=self._session, active=True)
                         self.db_tries = 1
                         self._to_be_updated.add(name)
                         return self.sync()

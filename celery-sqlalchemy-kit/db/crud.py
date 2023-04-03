@@ -21,7 +21,7 @@ class CRUDRoutine:
         self.model_name = model.__name__
 
     @staticmethod
-    def find(db: Session, *, skip: int = 0, limit: int = 100, name: str = None, active: bool = None) -> List[Routine]:
+    def get_multiple(db: Session, *, skip: int = 0, limit: int = 100, name: str = None, active: bool = None) -> List[Routine]:
         """
         Find Routines in Database.
                         **Parameters**

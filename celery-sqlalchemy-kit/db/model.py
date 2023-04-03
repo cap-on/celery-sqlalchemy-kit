@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime
 
 from celery.schedules import crontab
 from sqlalchemy import Column, String, JSON, DateTime, Integer, Boolean

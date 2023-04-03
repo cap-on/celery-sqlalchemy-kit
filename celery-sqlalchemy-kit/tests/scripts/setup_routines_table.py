@@ -3,7 +3,7 @@ import os
 import string
 from random import choices
 
-from crud import crud
+from db.crud import crud
 from db.model import Base, Routine
 from db.session import SessionWrapper
 

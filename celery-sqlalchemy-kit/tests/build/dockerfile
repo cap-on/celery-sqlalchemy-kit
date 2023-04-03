@@ -8,7 +8,7 @@ RUN apt-get update \
   && apt-get clean
 
 # install python dependencies
-RUN mkdir -p /src
+RUN mkdir -p /celery-sqlalchemy-kit
 WORKDIR /src/
 COPY /tests/build/requirements.dev.txt /src/
 RUN pip install --upgrade pip
