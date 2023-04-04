@@ -30,6 +30,16 @@ You can install this package from PyPi:
 ```bash  
 pip install celery-sqlalchemy-kit
 ```  
+
+## SQL Table 'routines'
+Using this package will create a table that contains your scheduled celery tasks. 
+The structure of table 'routines' is as follows:
+
+| id   | name  | task  | schedule  | last_run_at  | total_run_count  | active  | kwargs  | options  |
+|------|-------|-------|-----------|--------------|------------------|---------|---------|----------|
+|      |       |       |           |              |                  |         |         |          |
+
+
   
 ## Usage & Configuration 
 To demonstrate how to use the features of this package, there are examples in the 'example'-directory. 
@@ -90,10 +100,10 @@ class CeleryTestTask(SyncTask):
 
 The task that you want to be executed, has to be defined as the `run`method from your task class. Make sure to define a name for your task and set the variable `schedule`. For the schedule you have to options:
 
-|schedule type                |explanation                          |example	                         |syntax in db	                         |
-|----------------|-------------------------------|-----------------------------|-----------------------------|
-|time interval|run your task every ... seconds           |schedule = 15          |{"timedelta": 15}|
-|crontab          |define schedule as crontab, by creating a dict        |schedule = {"minute": 0, "hour": 9, "day_of_month": 15} | {"minute": 0, "hour": 9, "day_of_month": 15} |
+| schedule type   | explanation                                    | example	                                                | syntax in db	                                |
+|-----------------|------------------------------------------------|---------------------------------------------------------|----------------------------------------------|
+| time interval   | run your task every ... seconds                | schedule = 15                                           | {"timedelta": 15}                            |
+| crontab         | define schedule as crontab, by creating a dict | schedule = {"minute": 0, "hour": 9, "day_of_month": 15} | {"minute": 0, "hour": 9, "day_of_month": 15} |
 
 Now when you start your program, the scheduled tasks are added to your database in `routines` table and executed by a celery worker within the schedule you defined.
 
@@ -130,9 +140,6 @@ A task that is inactive will not be executed as long as you change it to active 
 - Scheduled task in code as well as db: schedule in db is used to run task
 - Tasks that are deleted in code will be removed from db after redeploy
 - Inactive tasks in db will not be executed
-
-### TODO @AL
-Show structure of SQL Routine Table here.
 
 
 ## 5. Run celery worker and beat

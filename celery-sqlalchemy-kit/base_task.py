@@ -5,13 +5,8 @@ from celery import Task
 from celery.utils.log import get_logger
 from celery.schedules import crontab
 
-# from db.session import TaskDBAsync
 
 logger = get_logger(__name__)
-
-# @AL Ich glaube, wir können das mit der Async Datenbankverbindung rauslassen.
-# Ist ja nicht gesichert, dass sie async nur/ausschließlich mit async db connection wollen
-# Kann man ja dann in die execute methode schreiben
 
 
 class SyncTask(Task):
@@ -76,17 +71,6 @@ class AsyncTask(SyncTask):
     All tasks can be executed on demand by using standard celery methods
     like 'async_apply()', 'delay()' or 'send_task()'.
     """
-    # _worker_async_db_uri: str = None
-
-    # def __init__(self):
-    #     super().__init__()
-    #     self._worker_async_db_uri = (
-    #         self.app.conf.get("worker_async_db_uri")
-    #         or os.getenv("WORKER_ASYNC_DB_URI")
-    #      )
-    #     if not self._worker_async_db_uri:
-    #         raise ValueError("Neither the celery config variable 'worker_async_db_uri' nor the ENV variable "
-    #                      "'WORKER_ASYNC_DB_URI' is set.")
 
     def run(self, *args, **kwargs):
         try:
@@ -95,17 +79,19 @@ class AsyncTask(SyncTask):
             raise self.retry(exc=e, max_retries=self.max_retries, retry_delay=self.retry_delay)
 
     async def run_execute(self, *args, **kwargs):
-        # task_db = TaskDBAsync(scheduler_db_uri=self._worker_async_db_uri)
-        # await task_db.connect()
+        # If all your async tasks use the same type of async db connection, you can override this method
+        # to set up a session here. You can then pass the session to the 'execute' method
+        # asyncDBSession = AsyncDBSession(scheduler_db_uri=async_db_uri)
+        # await asyncDBSession.connect()
         try:
             result = await self.execute(*args, **kwargs)
         except Exception as e:
             logger.error(e, exc_info=True)
-            # await task_db.rollback()
-            # await task_db.close()
+            # if an async db connection is used,
+            # rollback the session in this except block, to avoid changes in database when an error occurs
+            # await asyncDBSession.rollback()
             raise e
         else:
-            # await task_db.close()
             if result:
                 logger.info(result)
 

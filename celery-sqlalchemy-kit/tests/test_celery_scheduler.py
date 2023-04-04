@@ -43,7 +43,7 @@ def test_celery_scheduler(ac_session: Session) -> None:
     Also, the files 'scripts/prestart.py' and 'tests/setup_routines_table.py' must be executed in advance.
     Before the test is being run again, the scheduler needs to be restarted.
     """
-    time.sleep(7)
+    time.sleep(5)
 
     # this part checks if the schedule is set up correctly (merge db entries and celery routines correctly)
     # and only works when docker when no other tests have been executed yet
@@ -76,7 +76,7 @@ def test_celery_scheduler(ac_session: Session) -> None:
         test_file = json.load(jsonFile)
         if "value" in test_file:
             value = test_file["value"]
-    time.sleep(10)
+    time.sleep(12)
     with open(os.getenv("CELERY_TEST_FILE", "celery_test.json"), "r") as jsonFile:
         test_file = json.load(jsonFile)
         value_new = test_file["value"]

@@ -24,7 +24,7 @@ class Routine(Base):
     name = Column(String(50), index=True, nullable=False)
     task = Column(String(50), nullable=False)
     schedule = Column(JSON, nullable=False)
-    last_run_at = Column(DateTime, index=True)  # no default, so it does not look like
+    last_run_at = Column(DateTime, index=True)
     total_run_count = Column(Integer, default=0)
     active = Column(Boolean, default=True, nullable=False)
     kwargs = Column(JSON)
