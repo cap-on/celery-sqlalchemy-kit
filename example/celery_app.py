@@ -15,7 +15,7 @@ logger = logging.getLogger("celery")
 
 
 celery = Celery(
-    "celery", include=["celery-sqlalchemy-kit.example.custom_tasks"], backend=result_backend, broker=broker_url
+    "celery", include=["celery_sqlalchemy_kit.example.custom_tasks"], backend=result_backend, broker=broker_url
 )
 
 celery.conf.update(

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "celery-sqlalchemy-kit"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
   { name="Amelie Luecke", email="amelie.luecke@cap-on.de" }, { name="Philipp Ratz", email="philipp.ratz@cap-on.de" }
 ]
@@ -19,7 +19,7 @@ classifiers = [
 ]
 dependencies = [
     'celery >= 5.2.7, < 6',
-    'psycopg2 >= 2.9.3, < 3',
+    #'psycopg2 >= 2.9.3, < 3',
     'SQLAlchemy >= 1.4.46, < 3'
 ]
 
@@ -34,3 +34,6 @@ tests = [
 [project.urls]
 "Homepage" = "https://github.com/cap-on/celery-sqlalchemy-kit"
 "Bug Tracker" = "https://github.com/cap-on/celery-sqlalchemy-kit/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["./celery_sqlalchemy_kit"]
