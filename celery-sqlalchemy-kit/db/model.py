@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime
 
 from celery.schedules import crontab
 from sqlalchemy import Column, String, JSON, DateTime, Integer, Boolean
@@ -21,12 +20,12 @@ class Base:
 class Routine(Base):
     __tablename__ = "routines"
 
-    id: uuid.UUID = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(50), index=True, nullable=False)
     task = Column(String(50), nullable=False)
     schedule = Column(JSON, nullable=False)
-    last_run_at = Column(DateTime, default=datetime.utcnow, index=True)
-    total_run_count = Column(Integer)
+    last_run_at = Column(DateTime, index=True)
+    total_run_count = Column(Integer, default=0)
     active = Column(Boolean, default=True, nullable=False)
     kwargs = Column(JSON)
     options = Column(JSON)

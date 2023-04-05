@@ -3,9 +3,9 @@ import os
 import string
 from random import choices
 
-from crud_routines import crud_routine
+from db.crud import crud
 from db.model import Base, Routine
-from db.session import TaskDBSync
+from db.session import SessionWrapper
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def setup_db_for_celery_test() -> None:
-    task_db = TaskDBSync(scheduler_db_uri=os.getenv("SQLALCHEMY_DATABASE_SYNC_URI"))
+    task_db = SessionWrapper(scheduler_db_uri=os.getenv("SCHEDULER_DB_URI"))
     try:
         logger.debug("create 'routines' table")
         # create routines table
@@ -21,16 +21,16 @@ def setup_db_for_celery_test() -> None:
 
         # prepare db
         # delete all entries in 'routines' table
-        crud_routine.remove_all(db=task_db.session)
+        crud.remove_all(db=task_db.session)
         # create routine in db that is not defined in code
         routine = get_random_routine(name="test routine")
-        crud_routine.create(db=task_db.session, routine_in=Routine(**routine))
+        crud.create(db=task_db.session, routine_in=Routine(**routine))
         # create routine that is defined in code but with different schedule
         routine = get_random_routine(name="celery test", task="celery test", schedule={"timedelta": 60})
-        crud_routine.create(db=task_db.session, routine_in=Routine(**routine))
+        crud.create(db=task_db.session, routine_in=Routine(**routine))
         # create routine that is defined in code but set inactive in db
         routine = get_random_routine(name="celery test too", task="celery test too", active=False)
-        crud_routine.create(db=task_db.session, routine_in=Routine(**routine))
+        crud.create(db=task_db.session, routine_in=Routine(**routine))
         task_db.session.commit()
     except Exception as e:
         logger.error(e)

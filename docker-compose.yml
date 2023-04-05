@@ -1,9 +1,13 @@
+#######
+# This Docker Compose File is mainly for testing and showcasing purposes.
+#######
+
 version: '3.8'
 services:
 
   db:
-    container_name: ts_db
-    image: timescale/timescaledb:2.9.1-pg14
+    container_name: db
+    image: postgres:14.7
     volumes:
       - postgres_data:/var/lib/postgresql/data/
       - postgres_backup:/backup
@@ -25,10 +29,10 @@ services:
     container_name: celery_worker
     image: celery-sqlalchemy-kit:latest
     build:
-      context: ./src
-      dockerfile: ./tests/dockerfile
+      context: ./celery-sqlalchemy-kit
+      dockerfile: ./tests/build/dockerfile
     volumes:
-      - ./src/:/src
+      - ./celery-sqlalchemy-kit/:/celery-sqlalchemy-kit
     env_file:
       - .env
     command: bash -c "sleep 8 && sh ./tests/scripts/start_celery.sh"
@@ -37,7 +41,7 @@ services:
     container_name: celery_beat
     image: celery-sqlalchemy-kit:latest
     volumes:
-      - ./src/:/src
+      - ./celery-sqlalchemy-kit/:/celery-sqlalchemy-kit
     env_file:
       - .env
     command: bash -c "sleep 10 && sh ./tests/scripts/start_celery_beat.sh"
@@ -46,7 +50,7 @@ services:
     container_name: run_tests
     image: celery-sqlalchemy-kit:latest
     volumes:
-      - ./src/:/src
+      - ./celery-sqlalchemy-kit/:/celery-sqlalchemy-kit
     env_file:
       - .env
     command: sh ./tests/scripts/start_tests.sh

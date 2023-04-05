@@ -8,9 +8,9 @@ RUN apt-get update \
   && apt-get clean
 
 # install python dependencies
-RUN mkdir -p /src
-WORKDIR /src/
-COPY /tests/requirements.dev.txt /src/
+RUN mkdir -p /celery-sqlalchemy-kit
+WORKDIR /celery-sqlalchemy-kit/
+COPY /tests/build/requirements.dev.txt /celery-sqlalchemy-kit/
 RUN pip install --upgrade pip
 RUN pip install -r requirements.dev.txt
 
@@ -24,6 +24,6 @@ RUN chmod +x /start_celery_beat.sh
 COPY /tests/scripts/start_tests.sh /start_tests.sh
 RUN chmod +x /start_tests.sh
 
-COPY .. /src
+COPY ../.. /celery-sqlalchemy-kit
 
-ENV PYTHONPATH=/src
+ENV PYTHONPATH=/celery-sqlalchemy-kit

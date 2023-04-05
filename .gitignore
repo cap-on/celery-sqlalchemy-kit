@@ -1,5 +1,4 @@
 .idea
 .env
-/src/celery_test_file.json
-pyproject.toml
+/celery-sqlalchemy-kit/celery_test_file.json
 dist

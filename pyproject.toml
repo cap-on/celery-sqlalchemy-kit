@@ -8,7 +8,7 @@ version = "0.1.0"
 authors = [
   { name="Amelie Luecke", email="amelie.luecke@cap-on.de" }, { name="Philipp Ratz", email="philipp.ratz@cap-on.de" }
 ]
-description = "Schedule tasks in a postgres or mysql database and define async celery tasks."
+description = "Schedule tasks in an SQL Database and define Async Celery Tasks."
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -16,6 +16,19 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Development Status :: 3 - Alpha"
+]
+dependencies = [
+    'celery >= 5.2.7, < 6',
+    'psycopg2 >= 2.9.3, < 3',
+    'SQLAlchemy >= 1.4.46, < 3'
+]
+
+[project.optional-dependencies]
+broker = ['redis >= 4.5.1, < 5']
+tests = [
+    'tenacity >= 8.1.0, < 9',
+    'pytest > 7.2.1, < 8',
+    'tenacity > 8.1.0, < 9',
 ]
 
 [project.urls]

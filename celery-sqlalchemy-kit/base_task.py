@@ -5,11 +5,8 @@ from celery import Task
 from celery.utils.log import get_logger
 from celery.schedules import crontab
 
-from db.session import TaskDBAsync
 
 logger = get_logger(__name__)
-
-DEFAULT_SCHEDULER_ASYNC_DB_URI = "psycopg2:///schedule.db"
 
 
 class SyncTask(Task):
@@ -28,7 +25,6 @@ class SyncTask(Task):
     schedule: int | dict | None = None
     options: dict = {}
     kwargs: dict = {}
-    _scheduler_async_db_uri: str = None
 
     def __init__(self):
         if self.app.conf.get("celery_max_retry"):
@@ -40,12 +36,6 @@ class SyncTask(Task):
             self.retry_delay = int(self.app.conf.get("celery_retry_delay"))
         else:
             self.retry_delay = int(os.getenv("DEFAULT_CELERY_RETRY_DELAY", 300))
-
-        self._scheduler_async_db_uri = (
-            self.app.conf.get("scheduler_async_db_uri")
-            or os.getenv("SCHEDULER_ASYNC_DB_URI")
-            or DEFAULT_SCHEDULER_ASYNC_DB_URI
-        )
 
         if self.schedule:
             self.schedule_task()
@@ -89,20 +79,22 @@ class AsyncTask(SyncTask):
             raise self.retry(exc=e, max_retries=self.max_retries, retry_delay=self.retry_delay)
 
     async def run_execute(self, *args, **kwargs):
-        task_db = TaskDBAsync(scheduler_db_uri=self._scheduler_async_db_uri)
-        await task_db.connect()
+        # If all your async tasks use the same type of async db connection, you can override this method
+        # to set up a session here. You can then pass the session to the 'execute' method
+        # asyncDBSession = AsyncDBSession(scheduler_db_uri=async_db_uri)
+        # await asyncDBSession.connect()
         try:
-            result = await self.execute(db=task_db, *args, **kwargs)
+            result = await self.execute(*args, **kwargs)
         except Exception as e:
             logger.error(e, exc_info=True)
-            await task_db.rollback()
-            await task_db.close()
+            # if an async db connection is used,
+            # rollback the session in this except block, to avoid changes in database when an error occurs
+            # await asyncDBSession.rollback()
             raise e
         else:
-            await task_db.close()
             if result:
                 logger.info(result)
 
-    async def execute(self, db: TaskDBAsync, *args, **kwargs):
+    async def execute(self, *args, **kwargs):
         """The body of the task executed by workers."""
         raise NotImplementedError("Asynchronous Tasks must define the execute method.")
