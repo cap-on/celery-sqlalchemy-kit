@@ -20,12 +20,11 @@ classifiers = [
 dependencies = [
     'celery >= 5.2.7, < 6',
     'psycopg2 >= 2.9.3, < 3',
-    'redis >= 4.5.1, < 5',
-    'SQLAlchemy >= 1.4.46, < 3',
-    'asyncpg >= 0.27.0'
+    'SQLAlchemy >= 1.4.46, < 3'
 ]
 
 [project.optional-dependencies]
+broker = ['redis >= 4.5.1, < 5']
 tests = [
     'tenacity >= 8.1.0, < 9',
     'pytest > 7.2.1, < 8',

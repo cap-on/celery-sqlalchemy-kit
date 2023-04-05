@@ -35,10 +35,17 @@ pip install celery-sqlalchemy-kit
 Using this package will create a table that contains your scheduled celery tasks. 
 The structure of table 'routines' is as follows:
 
-| id   | name  | task  | schedule  | last_run_at  | total_run_count  | active  | kwargs  | options  |
-|------|-------|-------|-----------|--------------|------------------|---------|---------|----------|
-|      |       |       |           |              |                  |         |         |          |
-
+| Column           | Type                        | Collation   | Nullable  | Default   | 
+|------------------|-----------------------------|-------------|-----------|-----------|
+| id               | uuid                        |             | not null  |           |
+| name             | character varying(50)       |             | not null  |           |
+| task             | character varying(50)       |             | not null  |           |
+| schedule         | json                        |             | not null  |           |
+| last_run_at      | timestamp without time zone |             |           |           |
+| total_run_count  | integer                     |             |           |           |
+| active           | boolean                     |             | not null  |           |
+| kwargs           | json                        |             |           |           |
+| options          | json                        |             |           |           |
 
   
 ## Usage & Configuration 
