@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 
-from db.model import Routine
+from . import Routine
 
 
 class CRUDRoutine:

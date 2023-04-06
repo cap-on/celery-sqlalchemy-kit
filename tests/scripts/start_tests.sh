@@ -1,5 +1,5 @@
 #!/bin/sh -ex
-python scripts/prestart.py
+python tests/scripts/prestart.py
 # wait for db
 sleep 3
 python tests/scripts/setup_routines_table.py

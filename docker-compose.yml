@@ -29,13 +29,13 @@ services:
     container_name: celery_worker
     image: celery-sqlalchemy-kit:latest
     build:
-      context: celery_sqlalchemy_kit
+      context: .
       dockerfile: ./tests/build/dockerfile
     volumes:
       - ./celery_sqlalchemy_kit/:/celery_sqlalchemy_kit
     env_file:
       - .env
-    command: bash -c "sleep 8 && sh ./tests/scripts/start_celery.sh"
+    command: bash -c "sleep 8 && sh /start_celery.sh"
 
   celery_beat:
     container_name: celery_beat
@@ -44,7 +44,7 @@ services:
       - ./celery_sqlalchemy_kit/:/celery_sqlalchemy_kit
     env_file:
       - .env
-    command: bash -c "sleep 10 && sh ./tests/scripts/start_celery_beat.sh"
+    command: bash -c "sleep 10 && sh /start_celery_beat.sh"
 
   run_tests:
     container_name: run_tests
@@ -53,7 +53,7 @@ services:
       - ./celery_sqlalchemy_kit/:/celery_sqlalchemy_kit
     env_file:
       - .env
-    command: sh ./tests/scripts/start_tests.sh
+    command: sh /start_tests.sh
 
 volumes:
     postgres_data:

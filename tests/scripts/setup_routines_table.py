@@ -3,9 +3,9 @@ import os
 import string
 from random import choices
 
-from db.crud import crud
-from db.model import Base, Routine
-from db.session import SessionWrapper
+from celery_sqlalchemy_kit.db import crud
+from celery_sqlalchemy_kit.db import Base, Routine
+from celery_sqlalchemy_kit.db import SessionWrapper
 
 
 logging.basicConfig(level=logging.DEBUG)

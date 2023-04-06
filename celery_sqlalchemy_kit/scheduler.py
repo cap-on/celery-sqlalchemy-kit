@@ -8,11 +8,11 @@ from celery.beat import Scheduler
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from db.model import Routine, Base
 from sqlalchemy.orm import Session
 
-from db.crud import crud
-from db.session import SessionWrapper
+from .db import crud
+from .db import Routine, Base
+from .db import SessionWrapper
 
 DEFAULT_SCHEDULER_SYNC_DB_URI = "postgresql+psycopg2:///schedule.db"
 

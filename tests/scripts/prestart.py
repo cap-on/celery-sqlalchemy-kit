@@ -5,6 +5,7 @@ from sqlalchemy import text, create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from tenacity import after_log, before_log, retry, stop_after_attempt, wait_fixed
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,6 @@ def init() -> None:
 def main() -> None:
     print("Initializing service (waiting for DB)")
     init()
-    print("Service finished initializing")
 
 
 if __name__ == "__main__":

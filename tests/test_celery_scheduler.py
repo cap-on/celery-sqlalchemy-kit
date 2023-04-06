@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 
-from db.crud import crud
+from celery_sqlalchemy_kit.db import crud
 
 
 @pytest.fixture(scope="function")
@@ -43,7 +43,7 @@ def test_celery_scheduler(ac_session: Session) -> None:
     Also, the files 'scripts/prestart.py' and 'tests/setup_routines_table.py' must be executed in advance.
     Before the test is being run again, the scheduler needs to be restarted.
     """
-    time.sleep(5)
+    time.sleep(7)
 
     # this part checks if the schedule is set up correctly (merge db entries and celery routines correctly)
     # and only works when docker when no other tests have been executed yet

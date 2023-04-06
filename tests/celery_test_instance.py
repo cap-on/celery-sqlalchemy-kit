@@ -2,7 +2,7 @@ import json
 import os
 
 from celery import Celery
-from base_task import AsyncTask
+from celery_sqlalchemy_kit.base_task import AsyncTask
 
 celeryTest = Celery(
     "celeryTest",
