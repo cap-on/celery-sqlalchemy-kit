@@ -168,7 +168,7 @@ class RoutineScheduler(Scheduler):
             self._db_routines = crud.get_multiple(db=self._session, active=True)
             schedule_entries = self.db_routines_to_schedule_entries(db_routines=self._db_routines)
         except SQLAlchemyError as e:
-            if self.db_tries > 0:
+            if self.db_tries > 1:
                 raise e
             self._task_db.renew()
             self._session = self._task_db.session
