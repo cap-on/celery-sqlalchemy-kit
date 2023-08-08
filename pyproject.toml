@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "celery-sqlalchemy-kit"
-version = "0.1.2"
+version = "0.1.3"
 authors = [
   { name="Amelie Luecke", email="amelie.luecke@cap-on.de" }, { name="Philipp Ratz", email="philipp.ratz@cap-on.de" }
 ]
