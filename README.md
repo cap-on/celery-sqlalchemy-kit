@@ -19,7 +19,7 @@ But this has not been tested yet.
 - python >= 3.10  
 - celery >= 5.2.7, < 6 
 - sqlalchemy >= 1.4.46, < 3
-- psycopg2 >= 2.9.3 / mysql-connector / other connector depending on database
+- psycopg2 >= 2.9.3 / mysql-connector / other connector depending on database (psycopg2>=2.9.10 needed for Python 3.13)
 - redis >= 4.5.1, < 8 / other broker/backend for celery
 
 Earlier versions should work as well, they just have not been tested yet.
@@ -28,11 +28,12 @@ Earlier versions should work as well, they just have not been tested yet.
 
 These combinations have been verified:
 
-| Python | Celery | SQLAlchemy | Redis | Status                |
-|:-------|:-------|:-----------|:------|:----------------------|
-| 3.10   | 5.2.7  | 1.4.46     | 4.5.1 | ✅ successfully tested |
-| 3.10   | 5.5.3  | 2.0.44     | 7.0.1 | ✅ successfully tested |
-| 3.12   | 5.5.3  | 2.0.44     | 7.0.1 | ✅ successfully tested |
+| Python                | Celery | SQLAlchemy | Redis | Psycopg2          | Status                |
+|:----------------------|:-------|:-----------|:------|:------------------|:----------------------|
+| 3.10                  | 5.2.7  | 1.4.46     | 4.5.1 | 2.9.3             | ✅ successfully tested |
+| 3.10                  | 5.5.3  | 2.0.44     | 7.0.1 | 2.9.3             | ✅ successfully tested |
+| 3.11.14, <br/>3.12.12 | 5.5.3  | 2.0.44     | 7.0.1 | 2.9.3,<br/>2.9.10 | ✅ successfully tested |
+| 3.13.19               | 5.5.3  | 2.0.44     | 7.0.1 | 2.9.10            | ✅ successfully tested |
   
 ### Installation  
 You can install this package from PyPi:  
