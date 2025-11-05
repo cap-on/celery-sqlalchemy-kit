@@ -2,7 +2,7 @@ import json
 import os
 
 from example.celery_app import celery
-from src import AsyncTask, SyncTask
+from celery_sqlalchemy_kit.base_task import AsyncTask, SyncTask
 
 CELERY_TEST_FILE: str = os.getenv("CELERY_TEST_FILE")
 

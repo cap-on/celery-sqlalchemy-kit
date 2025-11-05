@@ -17,12 +17,22 @@ But this has not been tested yet.
 ## Getting Started  
 ### Requirements  
 - python >= 3.10  
-- celery >= 5.2.7  
-- sqlalchemy >= 1.4.46  - 2.0 should work as well
+- celery >= 5.2.7, < 6 
+- sqlalchemy >= 1.4.46, < 3
 - psycopg2 >= 2.9.3 / mysql-connector / other connector depending on database
-- redis >= 4.5.1 / other broker/backend for celery
+- redis >= 4.5.1, < 8 / other broker/backend for celery
 
 Earlier versions should work as well, they just have not been tested yet.
+
+### Compatibility matrix
+
+These combinations have been verified:
+
+| Python | Celery | SQLAlchemy | Redis | Status                |
+|:-------|:-------|:-----------|:------|:----------------------|
+| 3.10   | 5.2.7  | 1.4.46     | 4.5.1 | ✅ successfully tested |
+| 3.10   | 5.5.3  | 2.0.44     | 7.0.1 | ✅ successfully tested |
+| 3.12   | 5.5.3  | 2.0.44     | 7.0.1 | ✅ successfully tested |
   
 ### Installation  
 You can install this package from PyPi:  
@@ -81,14 +91,14 @@ celery.conf.update(
 )
 ```
 
-| variable                 | explanation                                                                                                                              | default	                  |
-|--------------------------|------------------------------------------------------------------------------------------------------------------------------------------|---------------------------|
-| `scheduler_db_uri`       | db uri used by scheduler (must be synchronous)                                                                                           | "psycopg2:///schedule.db" |
-| `scheduler_max_interval` | maximum time to sleep between re-checking the schedule                                                                                   | 300 (seconds)             |
-| `scheduler_sync_every`   | How often to sync the schedule                                                                                                           | 3 * 60 (seconds)          |
-| `celery_max_retry`       | How often to retry a task when it fails                                                                                                  | 3                         |
-| `celery_retry_delay`     | How long to wait before next retry of failed task is started                                                                             | 300 (seconds)             |
-| `create_table`           | If set `True`, table 'routines' for scheduled tasks is created automatically with sqlalchemy. If you wish to use alembic, set to `False` | True                      |
+| variable                 | explanation                                                                                                                              | default	         |
+|--------------------------|------------------------------------------------------------------------------------------------------------------------------------------|------------------|
+| `scheduler_db_uri`       | db uri used by scheduler (must be synchronous)                                                                                           | /                |
+| `scheduler_max_interval` | maximum time to sleep between re-checking the schedule                                                                                   | 300 (seconds)    |
+| `scheduler_sync_every`   | How often to sync the schedule                                                                                                           | 3 * 60 (seconds) |
+| `celery_max_retry`       | How often to retry a task when it fails                                                                                                  | 3                |
+| `celery_retry_delay`     | How long to wait before next retry of failed task is started                                                                             | 300 (seconds)    |
+| `create_table`           | If set `True`, table 'routines' for scheduled tasks is created automatically with sqlalchemy. If you wish to use alembic, set to `False` | True             |
 
 Make sure to use the correct `scheduler_db_uri` of your project allowing the `RoutineScheduler` to create a table named `routines` and save your scheduled tasks in it.
 These variables are also available as environment variables in upper case (except for `create_table`).

@@ -6,15 +6,13 @@ from celery.schedules import crontab
 from celery.utils.log import get_logger
 from celery.beat import Scheduler
 
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, OperationalError, DBAPIError, InterfaceError
 
 from sqlalchemy.orm import Session
 
 from .db import crud
 from .db import Routine, Base
 from .db import SessionWrapper
-
-DEFAULT_SCHEDULER_SYNC_DB_URI = "postgresql+psycopg2:///schedule.db"
 
 logger = get_logger(__name__)
 
@@ -35,11 +33,9 @@ class RoutineScheduler(Scheduler):
     def __init__(self, *args, **kwargs):
 
         self.app: Celery = kwargs["app"]
-        db_uri = (
-            self.app.conf.get("scheduler_db_uri")
-            or os.getenv("SCHEDULER_DB_URI")
-            or DEFAULT_SCHEDULER_SYNC_DB_URI
-        )
+        db_uri = self.app.conf.get("scheduler_db_uri") or os.getenv("SCHEDULER_DB_URI")
+        if not db_uri:
+            raise RuntimeError("No scheduler DB URI provided (scheduler_db_uri / SCHEDULER_DB_URI).")
 
         self.max_interval = int(self.app.conf.get("scheduler_max_interval") or os.getenv("SCHEDULER_MAX_INTERVAL", 10))
 
@@ -48,7 +44,7 @@ class RoutineScheduler(Scheduler):
         self._task_db = SessionWrapper(scheduler_db_uri=db_uri)
         self._session = self._task_db.session
 
-        if not self.app.conf.get("create_table", True):
+        if self.app.conf.get("create_table", True):
             try:
                 Base.metadata.create_all(bind=self._task_db.engine, checkfirst=True)
                 # checkfirst = True: will not attempt to recreate tables already present in the target database.
@@ -57,8 +53,19 @@ class RoutineScheduler(Scheduler):
 
         self._to_be_updated = set()
         self._schedule = {}
-        self.db_tries = 0
         super().__init__(*args, **kwargs)
+
+    def _safe_renew(self):
+        """
+        Dispose broken connections and renew the SQLAlchemy session safely.
+        Keeps the scheduler alive if the DB is temporarily unavailable.
+        """
+        try:
+            self._task_db.engine.dispose()
+        except Exception:
+            pass
+        self._task_db.renew()
+        self._session = self._task_db.session
 
     # Merge changes
     def merge_inplace(self, celery_task_schedules: dict):
@@ -76,20 +83,20 @@ class RoutineScheduler(Scheduler):
         # schedule = self.schedule
         # get all routines from db, active and inactive
         db_routines = crud.get_multiple(db=self._session)
-        schedule = self.db_routines_to_schedule_entries(db_routines=db_routines)
+        db_routines = self.db_routines_to_schedule_entries(db_routines=db_routines)
 
         # compare which routines are
         # new in celery routines -> write to db
         write_to_db = {}
         for key in celery_task_schedules:
-            if key not in schedule:
+            if key not in db_routines:
                 write_to_db[key] = celery_task_schedules[key]
 
         # deleted in celery -> delete in db
         delete_from_db = {}
-        for key in schedule:
+        for key in db_routines:
             if key not in celery_task_schedules:
-                delete_from_db[key] = schedule[key]
+                delete_from_db[key] = db_routines[key]
 
         # Update db
         logger.debug("Setup: Update db.")
@@ -118,7 +125,7 @@ class RoutineScheduler(Scheduler):
         self.merge_inplace(self.app.conf.beat_schedule)
         self.install_default_entries(self.schedule)
 
-    def db_routines_to_schedule_entries(self, db_routines):
+    def db_routines_to_schedule_entries(self, db_routines: list[Routine]) -> dict:
         schedule_entries = {}
         for routine in db_routines:
             routine_dict = routine.to_dict()
@@ -131,28 +138,29 @@ class RoutineScheduler(Scheduler):
         return schedule_entries
 
     @staticmethod
-    def schedule_dict_to_db_routines(schedule_dict):
+    def schedule_dict_to_db_routines(schedule_dict: dict) -> list[Routine]:
         db_routines = []
-        for key, value in schedule_dict.items():
-            if isinstance(value["schedule"], int):
-                schedule = {"timedelta": value["schedule"]}
-            elif isinstance(value["schedule"], crontab):
+        for task_name, info in schedule_dict.items():
+            schedule = info.get("schedule")
+            if isinstance(schedule, int):
+                schedule = {"timedelta": schedule}
+            elif isinstance(schedule, crontab):
                 schedule = {
-                    "minute": value["schedule"]._orig_minute,
-                    "hour": value["schedule"]._orig_hour,
-                    "day_of_week": value["schedule"]._orig_day_of_week,
-                    "day_of_month": value["schedule"]._orig_day_of_month,
-                    "month_of_year": value["schedule"]._orig_month_of_year,
+                    "minute": schedule._orig_minute,
+                    "hour": schedule._orig_hour,
+                    "day_of_week": schedule._orig_day_of_week,
+                    "day_of_month": schedule._orig_day_of_month,
+                    "month_of_year": schedule._orig_month_of_year,
                 }
             else:
-                raise ValueError(f"Schedule of task {key} is neither crontab nor an int")
+                raise ValueError(f"Schedule of task {task_name} is neither crontab nor an int")
             db_routines.append(
                 Routine(
-                    name=key,
-                    task=value["task"],
+                    name=task_name,
+                    task=info["task"],
                     schedule=schedule,
-                    kwargs=value["kwargs"],
-                    options=value["options"],
+                    kwargs=info.get("kwargs", {}),
+                    options=info.get("options", {}),
                 )
             )
         return db_routines
@@ -167,17 +175,18 @@ class RoutineScheduler(Scheduler):
         try:
             self._db_routines = crud.get_multiple(db=self._session, active=True)
             schedule_entries = self.db_routines_to_schedule_entries(db_routines=self._db_routines)
-        except SQLAlchemyError as e:
-            if self.db_tries > 1:
-                raise e
-            self._task_db.renew()
-            self._session = self._task_db.session
-            self.db_tries = 1
-            return self.get_schedule()
+        except (OperationalError, DBAPIError, InterfaceError, SQLAlchemyError) as e:
+            logger.warning(
+                "Database unavailable during get_schedule; keeping beat alive and retrying on next tick.",
+                exc_info=True,
+            )
+            # Drop stale connections and renew the session; do not recurse.
+            self._safe_renew()
+            # Safer default: pause scheduling for this tick to avoid duplicate fires.
+            return {}
         except Exception as e:
             logger.error(e, exc_info=True)
         logger.debug("Current schedule:\n" + "\n".join(repr(entry) for entry in schedule_entries.values()))
-        self.db_tries = 0
         return schedule_entries
 
     def set_schedule(self, new_schedule):
@@ -211,21 +220,20 @@ class RoutineScheduler(Scheduler):
                         }
                         crud.update(db=self._session, db_obj=db_routine, obj_in=obj_in)
                         _tried.add(name)
-                    except SQLAlchemyError as e:
-                        if self.db_tries > 0:
-                            raise e
-                        self._task_db.renew()
-                        self._session = self._task_db.session
-                        self._db_routines = crud.get_multiple(db=self._session, active=True)
-                        self.db_tries = 1
+                    except (OperationalError, DBAPIError, InterfaceError, SQLAlchemyError) as e:
+                        logger.warning(
+                            "Database unavailable during sync; deferring updates and will retry later.",
+                            exc_info=True,
+                        )
+                        # Re-queue and stop this tick to avoid tight loops while DB is down
+                        _failed.add(name)
                         self._to_be_updated.add(name)
-                        return self.sync()
+                        self._safe_renew()
+                        break
                     except Exception as e:
                         _failed.add(name)
                         logger.error(e, exc_info=True)
                         logger.debug("Database error while sync: %r", e)
-                    else:
-                        self.db_tries = 0
             finally:
                 # retry later, only for the failed ones
                 self._to_be_updated |= _failed

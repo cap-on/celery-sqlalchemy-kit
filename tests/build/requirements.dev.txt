@@ -1,6 +1,6 @@
-celery==5.2.7
+celery==5.5.3
 psycopg2==2.9.3
-pytest==7.2.1
-redis==4.5.1
-SQLAlchemy==1.4.46
-tenacity==8.1.0
+pytest==8.4.2
+redis==7.0.1
+SQLAlchemy==2.0.44
+tenacity==9.1.2
