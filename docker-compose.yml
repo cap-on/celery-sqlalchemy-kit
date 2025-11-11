@@ -2,7 +2,6 @@
 # This Docker Compose File is mainly for testing and showcasing purposes.
 #######
 
-version: '3.8'
 services:
 
   db:
@@ -47,6 +46,7 @@ services:
     command: bash -c "sleep 10 && sh /start_celery_beat.sh"
 
   run_tests:
+    # use this container as python interpreter to run and debug tests
     container_name: run_tests
     image: celery-sqlalchemy-kit:latest
     volumes:

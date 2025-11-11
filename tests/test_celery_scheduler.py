@@ -46,7 +46,7 @@ def test_celery_scheduler(ac_session: Session) -> None:
     time.sleep(7)
 
     # this part checks if the schedule is set up correctly (merge db entries and celery routines correctly)
-    # and only works when docker when no other tests have been executed yet
+    # and only works when no other tests have been executed yet
 
     # check if routine that is in db but not in code was correctly deleted in db
     routine = crud.find_by_name(db=ac_session, name="test routine")

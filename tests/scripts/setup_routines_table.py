@@ -25,7 +25,7 @@ def setup_db_for_celery_test() -> None:
         # create routine in db that is not defined in code
         routine = get_random_routine(name="test routine")
         crud.create(db=task_db.session, routine_in=Routine(**routine))
-        # create routine that is defined in code but with different schedule
+        # create routine, that is defined in code but with different schedule
         routine = get_random_routine(name="celery test", task="celery test", schedule={"timedelta": 60})
         crud.create(db=task_db.session, routine_in=Routine(**routine))
         # create routine that is defined in code but set inactive in db

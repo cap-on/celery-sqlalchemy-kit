@@ -1,7 +1,7 @@
 import time
 
 from sqlalchemy import create_engine, MetaData
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, OperationalError, DBAPIError, InterfaceError
 from sqlalchemy.orm import Session
 from celery.utils.log import get_logger
 
@@ -23,30 +23,61 @@ class SessionWrapper:
             pool_size=2,
             max_overflow=10,
             pool_pre_ping=True,
+            pool_recycle=1800,
             future=True,
             isolation_level="AUTOCOMMIT",
+            connect_args={"connect_timeout": 5},
         )
-        self.connection = self.engine.connect()
-        self.session = Session(bind=self.connection, expire_on_commit=False)
+        self._establish_session_with_retry()
+
+    def _establish_session_with_retry(self):
+        """Create a fresh connection and session, retrying until the DB becomes available."""
+        delay = 1
+        while True:
+            try:
+                self.connection = self.engine.connect()
+                self.session = Session(bind=self.connection, expire_on_commit=False)
+                self.db_tries = 0
+                return
+            except (OperationalError, DBAPIError, InterfaceError, SQLAlchemyError):
+                self.db_tries += 1
+                logger.warning(
+                    "DB connect failed (try %s); retrying in %ss",
+                    self.db_tries, delay, exc_info=True
+                )
+                time.sleep(delay)
+                delay = min(delay * 2, 30)
 
     def renew(self):
+        """Dispose broken connections and recreate session with exponential backoff."""
+        # Best-effort cleanup of current handles
         try:
-            self.session.close()
-            self.connection.close()
-            self.connection = self.engine.connect()
-            self.session = Session(bind=self.connection, expire_on_commit=False)
-        except SQLAlchemyError as e:
-            if self.db_tries > 2:
-                logger.critical(e)
-                time.sleep(5)
-                raise e
-            self.db_tries += 1
-            self.renew()
-        self.db_tries = 0
+            try:
+                self.session.close()
+            except Exception:
+                pass
+            try:
+                self.connection.close()
+            except Exception:
+                pass
+            # Force pool to drop any stale/broken sockets
+            self.engine.dispose()
+        except Exception:
+            pass
+        # Reconnect until DB is back
+        self._establish_session_with_retry()
 
     def close(self):
-        self.session.close()
-        self.connection.close()
+        try:
+            self.session.close()
+        finally:
+            try:
+                self.connection.close()
+            finally:
+                try:
+                    self.engine.dispose()
+                except Exception:
+                    pass
 
 
 metadata = MetaData()

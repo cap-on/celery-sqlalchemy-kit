@@ -4,5 +4,6 @@ python tests/scripts/prestart.py
 sleep 3
 python tests/scripts/setup_routines_table.py
 # wait for celery worker and beat to setup
-sleep 10
-pytest tests
+#sleep 10
+#pytest tests
+tail -f /dev/null
